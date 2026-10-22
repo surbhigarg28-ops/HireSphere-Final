@@ -1,0 +1,15 @@
+import {Router} from 'express';import {protect,authorize} from '../middleware/auth.js';import {validate,validId} from '../middleware/validate.js';
+import * as A from '../controllers/auth.js';import * as P from '../controllers/profiles.js';import * as J from '../controllers/jobs.js';import * as AP from '../controllers/applications.js';import * as D from '../controllers/dashboard.js';import * as N from '../controllers/notifications.js';
+const r=Router(),W=authorize('worker'),R=authorize('recruiter');
+r.get('/health',(_q,s)=>s.json({success:true,message:'HireSphere API is running'}));
+r.post('/auth/register',validate(A.registerSchema),A.register);r.post('/auth/login',validate(A.loginSchema),A.login);r.get('/auth/me',protect,A.me);
+r.route('/workers/profile').all(protect,W).get(P.getProfile).put(validate(P.workerSchema),P.updateProfile);
+r.route('/recruiters/profile').all(protect,R).get(P.getProfile).put(validate(P.recruiterSchema),P.updateProfile);
+r.get('/jobs',validate(J.querySchema,'query'),J.list);r.get('/jobs/mine',protect,R,J.mine);r.get('/jobs/:id',validId('id'),J.getOne);
+r.post('/jobs',protect,R,validate(J.jobSchema),J.create);r.put('/jobs/:id',protect,R,validId('id'),validate(J.jobSchema),J.update);
+r.patch('/jobs/:id/status',protect,R,validId('id'),validate(J.statusSchema),J.setStatus);r.delete('/jobs/:id',protect,R,validId('id'),J.remove);
+r.post('/applications',protect,W,validate(AP.applySchema),AP.apply);r.get('/applications/mine',protect,W,AP.mine);r.get('/applications/recruiter',protect,R,AP.forRecruiter);
+r.get('/applications/:id',protect,validId('id'),AP.getOne);r.patch('/applications/:id/status',protect,R,validId('id'),validate(AP.statusSchema),AP.setStatus);r.delete('/applications/:id',protect,W,validId('id'),AP.withdraw);
+r.get('/dashboard/worker',protect,W,D.worker);r.get('/dashboard/recruiter',protect,R,D.recruiter);
+r.get('/notifications',protect,N.list);r.patch('/notifications/read-all',protect,N.readAll);r.patch('/notifications/:id/read',protect,validId('id'),N.readOne);
+export default r;
